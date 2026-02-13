@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result - Customer Churn Prediction</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='global.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .result-card {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        
+        .result-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 3.5rem;
+            animation: pulse 2s infinite;
+        }
+        
+        .result-icon.success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: var(--success-color);
+        }
+        
+        .result-icon.danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: var(--danger-color);
+        }
+        
+        .result-icon.warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+            color: var(--warning-color);
+        }
+        
+        .prediction-text {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .confidence-display {
+            background: #f8f9fa;
+            border-radius: var(--border-radius-md);
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .confidence-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .confidence-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .recommendations-section {
+            margin-top: 30px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 2px solid #e9ecef;
+        }
+        
+        .btn-action {
+            min-width: 200px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+        
+        .prediction-summary {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .summary-value {
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        
+        .risk-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .risk-indicator.high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .risk-indicator.low {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .risk-indicator.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .info-card {
+            background: #f8f9fa;
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .info-card i {
+            color: #667eea;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <span>Churn Predictor</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Prediction History</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Settings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Help</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    <div class="user-dropdown dropdown">
+                        <a class="user-avatar dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                            <span>{{ session.get('user_name', 'U')|first|upper }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <h6 class="dropdown-header">{{ session.get('user_name', 'User') }}</h6>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><a class="dropdown-item" href="#">Account Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item danger" href="/logout">Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid px-4 py-4">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="messages mb-4">
+            {% for category, message in messages %}
+            <div class="message {{ 'error' if category == 'error' else 'success' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow result-card">
+                    <div class="card-header text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h2 class="mb-1">Prediction Result</h2>
+                                <p class="mb-0">Customer churn analysis</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if error %}
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <h4 class="alert-heading">Error</h4>
+                                <p>{{ prediction }}</p>
+                            </div>
+                        {% else %}
+                            <!-- Result Icon -->
+                            <div class="result-icon {{ 'success' if 'No' in prediction else 'danger' }}">
+                                {% if 'No' in prediction %}
+                                    <i class="fas fa-check"></i>
+                                {% else %}
+                                    <i class="fas fa-times"></i>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Prediction Text -->
+                            <h2 class="prediction-text {{ 'text-success' if 'No' in prediction else 'text-danger' }}">
+                                Churn Prediction: {{ prediction }}
+                            </h2>
+                            
+                            <!-- Risk Indicator -->
+                            <div class="mb-4">
+                                <span class="risk-indicator {{ 'low' if 'No' in prediction else 'high' }}">
+                                    {{ 'Low Risk - Customer Likely to Stay' if 'No' in prediction else 'High Risk - Customer May Leave' }}
+                                </span>
+                            </div>
+                            
+                            <!-- Confidence Display -->
+                            <div class="confidence-display">
+                                <div class="confidence-label">Churn Probability</div>
+                                <div class="confidence-value {{ 'text-success' if confidence < 50 else 'text-danger' }}">
+                                    {{ confidence|round(2) }}%
+                                </div>
+                                <div class="progress mt-3" style="height: 25px;">
+                                    <div class="progress-bar bg-{{ risk_color }}" role="progressbar" 
+                                         style="width: {{ confidence|round(2) }}%" 
+                                         aria-valuenow="{{ confidence|round(2) }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ confidence|round(2) }}%
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Summary Card -->
+                            <div class="prediction-summary text-start">
+                                <h6 class="mb-3">Prediction Summary</h6>
+                                <div class="summary-item">
+                                    <span class="summary-label">Churn Status</span>
+                                    <span class="summary-value {{ 'text-success' if 'No' in prediction else 'text-danger' }}">
+                                        {{ 'Will Stay' if 'No' in prediction else 'Will Churn' }}
+                                    </span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Confidence Level</span>
+                                    <span class="summary-value">
+                                        {{ 'Very High' if confidence >= 80 else 'High' if confidence >= 60 else 'Medium' if confidence >= 40 else 'Low' }}
+                                    </span>
+                                </div>
+                                <div class="summary-item">
+                                    <span class="summary-label">Risk Level</span>
+                                    <span class="summary-value">{{ risk_level }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Recommendations Section -->
+                            <div class="recommendations-section text-start">
+                                <h5 class="mb-4">Recommendations</h5>
+                                
+                                <div class="list-group">
+                                    {% if 'Yes' in prediction %}
+                                        <div class="list-group-item">
+                                            <strong>Offer Personalized Retention Discounts</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Provide exclusive offers based on customer usage patterns</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Schedule Customer Satisfaction Call</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Reach out to understand their concerns and needs</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Consider Service Plan Upgrade</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Suggest better plans that match their usage</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Provide Loyalty Benefits</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Highlight long-term customer perks and rewards</p>
+                                        </div>
+                                    {% else %}
+                                        <div class="list-group-item">
+                                            <strong>Maintain Regular Communication</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Keep them engaged with updates and newsletters</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Offer Value-Added Services</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Suggest relevant add-ons that enhance their experience</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Explore Upselling Opportunities</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Present premium options that could benefit them</p>
+                                        </div>
+                                        <div class="list-group-item">
+                                            <strong>Request Referrals</strong>
+                                            <p class="mb-0 text-muted" style="font-size: 0.9rem;">Ask for referrals from satisfied customers</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Info Card -->
+                            <div class="info-card mt-4">
+                                <strong>Analysis Note:</strong>
+                                {% if 'Yes' in prediction %}
+                                    This customer shows indicators of potential churn. Proactive engagement is recommended to improve retention.
+                                {% else %}
+                                    This customer demonstrates stable behavior. Focus on maintaining satisfaction and exploring growth opportunities.
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Action Buttons -->
+                        <div class="action-buttons">
+                            <a href="/" class="btn btn-primary btn-action">New Prediction</a>
+                            <button onclick="window.print()" class="btn btn-secondary btn-action">Print Result</button>
+                            <button onclick="downloadPDF()" class="btn btn-outline-primary btn-action">Download PDF</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Actions -->
+                <div class="text-center mt-4">
+                    <a href="/" class="btn btn-link">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animate progress bar on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                const targetWidth = progressBar.style.width;
+                progressBar.style.width = '0%';
+                setTimeout(() => {
+                    progressBar.style.width = targetWidth;
+                }, 100);
+            }
+        });
+        
+        // Download PDF function (placeholder)
+        function downloadPDF() {
+            alert('PDF download feature coming soon!');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+import pickle
+import joblib
+
+filename = "model.pkl"
+pickle.dump(model_rf_smote, open(filename, 'wb')) 
+load_model = pickle.load(open(filename,'rb'))
+load_model.score(xk_test,yk_test)
