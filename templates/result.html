@@ -257,15 +257,15 @@
                             <div class="confidence-display">
                                 <div class="confidence-label">Churn Probability</div>
                                 <div class="confidence-value {{ 'text-success' if confidence < 50 else 'text-danger' }}">
-                                    {{ confidence|round(2) }}%
+                                    {{ confidence_display }}%
                                 </div>
                                 <div class="progress mt-3" style="height: 25px;">
-                                    <div class="progress-bar bg-{{ risk_color }}" role="progressbar" 
-                                         style="width: {{ confidence|round(2) }}%" 
-                                         aria-valuenow="{{ confidence|round(2) }}" 
-                                         aria-valuemin="0" 
+                                    <div class="progress-bar bg-{{ risk_color }}" role="progressbar"
+                                         data-confidence="{{ confidence_display|default(0) }}"
+                                         aria-valuenow="{{ confidence_display|default(0) }}"
+                                         aria-valuemin="0"
                                          aria-valuemax="100">
-                                        {{ confidence|round(2) }}%
+                                        {{ confidence_display|default(0) }}%
                                     </div>
                                 </div>
                             </div>
@@ -368,10 +368,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             const progressBar = document.querySelector('.progress-bar');
             if (progressBar) {
-                const targetWidth = progressBar.style.width;
+                const confidence = parseFloat(progressBar.getAttribute('data-confidence')) || 0;
                 progressBar.style.width = '0%';
                 setTimeout(() => {
-                    progressBar.style.width = targetWidth;
+                    progressBar.style.width = confidence + '%';
                 }, 100);
             }
         });
