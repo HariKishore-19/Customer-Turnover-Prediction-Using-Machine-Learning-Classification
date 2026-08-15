@@ -11,10 +11,11 @@ import json
 
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here' 
+app.secret_key = os.environ.get('SECRET_KEY', 'change-this-development-secret')
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-USERS_FILE = 'users.json'
+USERS_FILE = os.path.join(BASE_DIR, 'users.json')
 
 def load_users():
     """Load users from JSON file"""
@@ -28,7 +29,7 @@ def save_users(users):
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f)
 
-df_1 = pd.read_csv('WA_Fn-UseC_-Telco-Customer-Churn.csv')
+df_1 = pd.read_csv(os.path.join(BASE_DIR, 'WA_Fn-UseC_-Telco-Customer-Churn.csv'))
 df_1.TotalCharges = pd.to_numeric(df_1.TotalCharges, errors='coerce')
 df_1.dropna(how='any', inplace=True)
 labels = ["{0} - {1}".format(i, i + 11) for i in range(1, 72, 12)]
@@ -96,19 +97,17 @@ def signup():
         if not name or not email or not password:
             return {"success": False, "message": "All fields are required."}, 400
             
-        users = load_users()
-        
-        if email in users:
-            return {"success": False, "message": "Email already registered. Please login."}, 400
-        
-        users[email] = {
-            'name': name,
-            'email': email,
-            'password': password
-        }
-        save_users(users)
-        
-        return {"success": True, "message": "Account created successfully! Redirecting to login..."}, 200
+        # Vercel functions cannot persist changes to users.json. For this demo,
+        # complete sign-up by creating the authenticated browser session.
+        # Use a managed database before using this application in production.
+        session['user_email'] = email
+        session['user_name'] = name
+
+        return {
+            "success": True,
+            "message": "Account created successfully!",
+            "redirect": "/"
+        }, 200
     
     return render_template('Login & Signup.html', page='signup')
 
@@ -154,7 +153,8 @@ def predict():
         tenure_val = max(1, min(72, inputQuery19))
         tenure_group = pd.cut([tenure_val], range(1, 80, 12), right=False, labels=labels)[0]
 
-        model = pickle.load(open('model.sav', 'rb'))
+        with open(os.path.join(BASE_DIR, 'model.sav'), 'rb') as model_file:
+            model = pickle.load(model_file)
 
         data = [[inputQuery1, inputQuery2, inputQuery3, inputQuery4, inputQuery5, inputQuery6,
                   inputQuery7, inputQuery8, inputQuery9, inputQuery10, inputQuery11, inputQuery12,
@@ -174,7 +174,7 @@ def predict():
         single = model.predict(new_df_dumies.tail(1))
         probability = model.predict_proba(new_df_dumies.tail(1))[0][1]
 
-        if single == 1:
+        if single[0] == 1:
             prediction = "Yes"
             confidence = float(probability * 100)
             confidence_display = round(confidence, 2)
